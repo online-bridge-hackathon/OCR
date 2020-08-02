@@ -9,10 +9,11 @@ Created on Thu Jul 23 22:42:13 2020
 import xml.etree.ElementTree as et
 import pandas as pd
 from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
+import sys
+import os
 
-filename = 'C:/Users/jdfab/Dropbox/Bridge/OCR/WhatsApp Image 2020-06-21 at 14.07.44.xml'
 
 
 def get_data_frame_from_xml(xml_fn):
@@ -32,8 +33,8 @@ def get_data_frame_from_xml(xml_fn):
         xmax = xmlbox.find('xmax').text
         ymin = xmlbox.find('ymin').text
         ymax = xmlbox.find('ymax').text
-        
-        cards_list.append([card,xmin,xmax,ymin,ymax])
+        # all the data formats seem to use 'T' rather than '10', so we'll do that as we impor the XML
+        cards_list.append([card.replace('10','T'),xmin,xmax,ymin,ymax])
     return pd.DataFrame(cards_list,columns = ['card','xmin','xmax','ymin','ymax'])
 
 
@@ -53,15 +54,19 @@ def get_hands_from_filename(filename):
     #cards only have 4 corners. If there are any more, then something is wrong. 
         
     if cards.groupby('card').count().max().max() > 4:
-        print('There is a duplicated card in the xml')
+        counts = cards.groupby('card').count().max(axis = 1)
+        too_many = counts[counts > 4].index
+        print('There is a duplicated card in the xml: %s' %(' '.join(too_many)))
     
     
     #we'll leave the card name as the index here, so we can just pass the whole data frame to the clustering algorithm
-        
+    all_cards = [value + suit for value in list('23456789TJQK') for suit in list('CDHS')]
+    print(all_cards)
     cards = cards.groupby('card').mean()
-    if len(cards) < 52: 
-        missing_card = ''
-        print('there is a card missing, it is %s' %missing_card)
+    if len(cards) < 52:
+
+        missing_cards = set(all_cards).difference(set(cards.index))
+        print('These cards are missing: %s' %(' '.join(missing_cards)))
     
     kmeans = KMeans(n_clusters=4).fit(cards)
     centroids = kmeans.cluster_centers_
@@ -77,10 +82,10 @@ def get_hands_from_filename(filename):
     hands[np.argmax(centroids[:,0])] = 'w'
     
     
-    
-    plt.scatter(cards['xmin'], cards['ymin'], c= kmeans.labels_.astype(float), s=50, alpha=0.5)
-    plt.scatter(centroids[:, 0], centroids[:, 2], c='red', s=50)
-    plt.show()
+    #This code was used in testing, but haven't included matplotlib in requirements, so I'm removing it for now
+    #plt.scatter(cards['xmin'], cards['ymin'], c= kmeans.labels_.astype(float), s=50, alpha=0.5)
+    #plt.scatter(centroids[:, 0], centroids[:, 2], c='red', s=50)
+    #plt.show()
     
     cards['player'] = kmeans.predict(cards)
     cards['player'] = cards['player'].replace(hands)
@@ -93,11 +98,9 @@ def get_hands_from_filename(filename):
         print('one of the hands has too many cards')
         
     # we need to distinguish suit and value, so let's do it now
-    # all the data formats seem to use 'T' rather than '10', so we'll do that now as well
-        
+
     
     cards = cards.reset_index()
-    cards.card = cards.card.str.replace('10','T')
     cards['suit'] = cards.card.str[-1]
     cards['value'] = cards.card.str[:-1]
     
@@ -107,7 +110,7 @@ def get_hands_from_filename(filename):
 
 def dataframe_to_pbn(cards):
     ''' takes a dataframe with columns 'labels', 'suit' and 'value' 
-    and returns a json of the hand
+    and returns a pbn of the hand
     '''
     
     #group the cards for each player by suit, and then sort them in descending order
@@ -126,12 +129,19 @@ def dataframe_to_pbn(cards):
     
     return pbn
     
+if __name__ == '__main__':
+    #for testing
+    # 'test_errors.xml' has 8 references to the JD, and no 8S.
 
+    if sys.argv[1] == 'use_default':
+        filename = 'C:/Users/jdfab/Dropbox/Bridge/bridge_hackathon/OCR/hand_detection/IMG_20200621_114258.xml'
+    else:
+        filename = os.path.join(os.getcwd(),'hand_detection',sys.argv[1])
 
-cards = get_hands_from_filename(filename)
-pbn = dataframe_to_pbn(cards)
+    cards = get_hands_from_filename(filename)
+    pbn = dataframe_to_pbn(cards)
 
-print(pbn)
+    print(pbn)
 
 
     
