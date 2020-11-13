@@ -29,7 +29,7 @@ Suggested testing path:
 > LIBSO=1
 6. Run make in the darknet folder
 > make
-7. Upload detect.py to the main darknet folder. Upload any test images i.e. in darknet/test/ and outputs will be generated in darknet/test_out/
+7. Upload detect.py to the main darknet folder. Upload any test images i.e. in darknet/test/ and outputs will be generated in darknet/test_out/. Some test images can be found here: https://drive.google.com/drive/folders/1KA7HseM2liyBhExUySehFMhzlANCs0wO?usp=sharing
 8. Download the following darknet data files: https://drive.google.com/drive/folders/1rsNcTu3LQekErwQonqjSFaDLGiPg829A?usp=sharing \
 Put yolov4-cards.cfg and cards.weights in the main darknet folder. \
 Put cards.data and cards.names in darknet/data/.
@@ -37,6 +37,7 @@ Put cards.data and cards.names in darknet/data/.
 > ! chmod +x ./darknet
 > ! python detect.py -if data/test/ -of data/test_out/ -cfg yolov4-cards.cfg -df data/cards.data -w cards.weights \
 If you have followed the instructions above closely this should run detection on the provided images. Otherwise make sure you change the provided paths to the appropriate files.
+
 
 Contacts:
 Teodor Totev ( tedi.totev97@gmail.com )
