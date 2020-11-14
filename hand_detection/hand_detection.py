@@ -1,113 +1,99 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 23 22:42:13 2020
+Created on Sat Nov 14 16:49:58 2020
 
 @author: jdfab
 """
-
-
-import xml.etree.ElementTree as et
+import os
 import pandas as pd
 from sklearn.cluster import KMeans
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
-import sys
-import os
 
 
 
-def get_data_frame_from_xml(xml_fn):
-    ''' Takes an XML in the format we are using for input into the OCR model,
-        and outputs a dataframe with the same information
+cards = pd.read_csv('C:/Users/jdfab/Dropbox/Bridge/OCR/test_files/cards.names',header=None)
+cards.columns = ['card']
+
+file_path = 'C:/Users/jdfab/Dropbox/Bridge/OCR/test_files/test10_out/6/'
+file_path = 'C:/Users/jdfab/Dropbox/Bridge/OCR/test_files/'
+
+def get_data_frame_from_files(file_path,cards,confidence_threshold=95):
     '''
+    This function should return a dataframe with the best guess
+    of the position of each card, given the output of the predictive model
     
-    cards_list = list()
-
-    tree = et.parse(xml_fn)
-    root = tree.getroot()
-
-    for obj in root.iter('object'):
-        card = obj.find('name').text
-        xmlbox = obj.find('bndbox')
-        xmin = xmlbox.find('xmin').text
-        xmax = xmlbox.find('xmax').text
-        ymin = xmlbox.find('ymin').text
-        ymax = xmlbox.find('ymax').text
-        # all the data formats seem to use 'T' rather than '10', so we'll do that as we impor the XML
-        cards_list.append([card.replace('10','T'),xmin,xmax,ymin,ymax])
-    return pd.DataFrame(cards_list,columns = ['card','xmin','xmax','ymin','ymax'])
-
-
-def get_hands_from_filename(filename):
-    ''' Takes an XML in the format we are using for input into the OCR model,
-        and returns a dataframe with hand labels (using K-means clustering)
+    The output is a dataframe with index 'card' which contains card names 
+    in the format 'AC', '6H', etc., and two numerical columns.
+    
+    Current logic is *very* simple- just take the mean of all predictions 
+    above a certain confidence level to get the x,y coordinates. 
+    This seems to give passable reuslts on some outputs, but needs more work.
+      
     '''
-    
-    cards = get_data_frame_from_xml(filename)
-    
-    #check the data types are ok
-    cards.xmin = pd.to_numeric(cards.xmin)
-    cards.xmax = pd.to_numeric(cards.xmax)
-    cards.ymin = pd.to_numeric(cards.ymin)
-    cards.ymax = pd.to_numeric(cards.ymax)
-    
-    #cards only have 4 corners. If there are any more, then something is wrong. 
-        
-    if cards.groupby('card').count().max().max() > 4:
-        counts = cards.groupby('card').count().max(axis = 1)
-        too_many = counts[counts > 4].index
-        print('There is a duplicated card in the xml: %s' %(' '.join(too_many)))
-    
-    
-    #we'll leave the card name as the index here, so we can just pass the whole data frame to the clustering algorithm
-    all_cards = [value + suit for value in list('23456789TJQK') for suit in list('CDHS')]
-    print(all_cards)
-    cards = cards.groupby('card').mean()
-    if len(cards) < 52:
 
-        missing_cards = set(all_cards).difference(set(cards.index))
-        print('These cards are missing: %s' %(' '.join(missing_cards)))
+    boxes = {}
     
-    kmeans = KMeans(n_clusters=4).fit(cards)
+    for file_name in os.listdir(file_path):
+        if file_name[-4:] == '.txt':
+            if os.path.getsize(file_path+file_name) > 0:
+                print(file_name)
+                file_data = pd.read_csv(file_path + file_name,header=None, sep = ' ')
+                file_data.columns = ['label','x_ratio','y_ratio','width','height','confidence']
+                file_data['Name'] = file_name[file_name.find('_')+1:-4]
+                boxes[file_name] = file_data
+    
+    
+    boxes = pd.concat(boxes[file_name] for file_name in boxes)
+
+    boxes[['top_x','top_y']] = boxes['Name'].str.split('_',expand=True)
+    
+    
+    boxes['top_x'] = pd.to_numeric(boxes['top_x'])
+    boxes['top_y'] = pd.to_numeric(boxes['top_y'])
+    boxes = boxes.merge(cards,left_on = 'label',right_index=True)
+                
+    boxes['x'] = boxes.x_ratio*720 + boxes.top_x
+    
+    boxes['y'] = boxes.y_ratio*720 + boxes.top_y     
+    
+    boxes = boxes[['confidence','x','y','card']]
+
+    if boxes.confidence.mean() < 1: 
+        confidence_threshold = confidence_threshold/100
+    confident = boxes[boxes.confidence > confidence_threshold]
+
+    
+    confident = confident[['card','x','y']].groupby('card').mean()
+    return confident
+
+
+def add_players_to_card_positions(card_positions):
+    '''
+    take a dataframe with cards and positions, and label each card according to which hand it's in
+    NB - assumes 'north' is at the top. 
+    keyword argument: 
+        card_positions: a dataframe, with columns ['card','x','y']
+    
+    adds a column 'player' with the label (from 'nesw') of the hand that card is in
+    '''
+    kmeans = KMeans(n_clusters=4).fit(card_positions)
     centroids = kmeans.cluster_centers_
     hands = dict()
-    
-    #Assume the hand with the largest y-coordinate is north, and so on.
-    #Note that there are two x and two y coordinates in 'centroids',
-    #which is why we use indices 0 and 2 below.
-    
-    hands[np.argmax(centroids[:,2])] = 'n'
-    hands[np.argmin(centroids[:,2])] = 's'
-    hands[np.argmin(centroids[:,0])] = 'e'
+    hands[np.argmin(centroids[:,1])] = 'e'
+    hands[np.argmax(centroids[:,1])] = 's'
     hands[np.argmax(centroids[:,0])] = 'w'
+    hands[np.argmin(centroids[:,0])] = 'n'
     
-    
-    #This code was used in testing, but haven't included matplotlib in requirements, so I'm removing it for now
-    #plt.scatter(cards['xmin'], cards['ymin'], c= kmeans.labels_.astype(float), s=50, alpha=0.5)
-    #plt.scatter(centroids[:, 0], centroids[:, 2], c='red', s=50)
+    #This is a cool visualisation, and useful for testing, but not really required, just leaving it here for now
+    #plt.scatter(card_positions['x'], card_positions['y'], c= kmeans.labels_.astype(float), s=50, alpha=0.5)
+    #plt.scatter(centroids[:, 0], centroids[:, 1], c='red', s=50)
     #plt.show()
-    
-    cards['player'] = kmeans.predict(cards)
-    cards['player'] = cards['player'].replace(hands)
-    
-    if cards.player.value_counts().min() < 13: 
-        print('one of the hands doesnt have enough cards')
-    
-    print(cards.player.value_counts())
-    if cards.player.value_counts().max() > 13: 
-        print('one of the hands has too many cards')
         
-    # we need to distinguish suit and value, so let's do it now
-
+    card_positions['player'] = kmeans.predict(card_positions)
+    card_positions['player'] = card_positions['player'].replace(hands)
+    return card_positions
     
-    cards = cards.reset_index()
-    cards['suit'] = cards.card.str[-1]
-    cards['value'] = cards.card.str[:-1]
-    
-    return cards[['player','suit','value']].sort_values(['player','suit'],ascending =[True,False])
-
-
-
 def dataframe_to_pbn(cards):
     ''' takes a dataframe with columns 'labels', 'suit' and 'value' 
     and returns a pbn of the hand
@@ -121,7 +107,7 @@ def dataframe_to_pbn(cards):
     cards = cards.sort_values('suit',ascending = False)
     pbn = '[Deal "N:'
 
-    
+    #TODO - doesn't handle voids properly
     for player in 'nesw':
         pbn += '.'.join(cards[cards.player == player].value)
         pbn += ' ' 
@@ -130,18 +116,10 @@ def dataframe_to_pbn(cards):
     return pbn
     
 if __name__ == '__main__':
-    #for testing
-    # 'test_errors.xml' has 8 references to the JD, and no 8S.
-
-    if sys.argv[1] == 'use_default':
-        filename = 'C:/Users/jdfab/Dropbox/Bridge/bridge_hackathon/OCR/hand_detection/IMG_20200621_114258.xml'
-    else:
-        filename = os.path.join(os.getcwd(),'hand_detection',sys.argv[1])
-
-    cards = get_hands_from_filename(filename)
-    pbn = dataframe_to_pbn(cards)
-
-    print(pbn)
-
-
-    
+    confident = get_data_frame_from_files(file_path,cards)
+    card_positions = add_players_to_card_positions(confident)
+    card_positions = card_positions.reset_index()
+    card_positions.card = card_positions.card.str.replace('10','T')
+    card_positions['value'] = card_positions.card.str.slice(0,1)
+    card_positions['suit'] = card_positions.card.str.slice(1)
+    print(dataframe_to_pbn(card_positions[['player','value','suit']]))
