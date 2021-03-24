@@ -24,10 +24,10 @@ LabelImg tool: https://github.com/tzutalin/labelImg
 ### Synthetic Data Generation
 Using the provided python notebook with the same name a synthetic dataset can be generated. \
 Cards Images: https://drive.google.com/drive/folders/1bMF4GYIPJejTKQsYajixYM5RAhuyb5Ge?usp=sharing \
-Synthethic Dataset: https://drive.google.com/drive/folders/1Vapg88kaifZkCv9o9GeGy8MCF9_BHD8w?usp=sharing \
+Synthethic Dataset: https://drive.google.com/drive/folders/1Vapg88kaifZkCv9o9GeGy8MCF9_BHD8w?usp=sharing (link not working)
 
 ## OCR API
-The role of the API is to make use of the trained model to provide a softaware solution capable of serving hand-describing files from 2D images. 
+The role of the API is to make use of the trained model to provide a software solution capable of serving hand-describing files from 2D images. 
 
 For additional information:
 Computer Vision - Teodor Totev ( tedi.totev97@gmail.com ), 
