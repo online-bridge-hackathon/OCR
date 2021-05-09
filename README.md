@@ -14,6 +14,19 @@ The trained model can be used to detect images through a Python API located in: 
 > detection/
 It's current output is overlapping 720x720 snippets of the input images with snippet detections. These will soon be combined to form detections over the original input images.
 
+
+### Synthetic Data Generation
+Using the provided python notebook with the same name a synthetic dataset can be generated. \
+Cards Images: https://drive.google.com/drive/folders/1bMF4GYIPJejTKQsYajixYM5RAhuyb5Ge?usp=sharing \
+Synthethic Dataset: https://drive.google.com/drive/folders/1Vapg88kaifZkCv9o9GeGy8MCF9_BHD8w?usp=sharing (link not working)
+
+## OCR API
+The role of the API is to make use of the trained model to provide a software solution capable of serving hand-describing files from 2D images. 
+
+For additional information:
+Computer Vision - Teodor Totev ( tedi.totev97@gmail.com ), 
+API - Zhivko Draganov ( ) or message in the OCR channel in Discord
+=======
 Suggested testing path:
 1. Open Google Colab: https://colab.research.google.com
 2. Create a new notebook
@@ -29,7 +42,7 @@ Suggested testing path:
 > LIBSO=1
 6. Run make in the darknet folder
 > make
-7. Upload detect.py to the main darknet folder. Upload any test images i.e. in darknet/test/ and outputs will be generated in darknet/test_out/. Some test images can be found here: https://drive.google.com/drive/folders/1KA7HseM2liyBhExUySehFMhzlANCs0wO?usp=sharing
+7. Upload detect.py to the main darknet folder. Upload any test images i.e. in darknet/data/test/ and outputs will be generated in darknet/data/test_out/. Some test images can be found here: https://drive.google.com/drive/folders/1KA7HseM2liyBhExUySehFMhzlANCs0wO?usp=sharing
 8. Download the following darknet data files: https://drive.google.com/drive/folders/1rsNcTu3LQekErwQonqjSFaDLGiPg829A?usp=sharing \
 Put yolov4-cards.cfg and cards.weights in the main darknet folder. \
 Put cards.data and cards.names in darknet/data/.
@@ -38,6 +51,6 @@ Put cards.data and cards.names in darknet/data/.
 > ! python detect.py -if data/test/ -of data/test_out/ -cfg yolov4-cards.cfg -df data/cards.data -w cards.weights \
 If you have followed the instructions above closely this should run detection on the provided images. Otherwise make sure you change the provided paths to the appropriate files.
 
-
 Contacts:
 Teodor Totev ( tedi.totev97@gmail.com )
+John Fabedn (jdfaben@gmail.com)
