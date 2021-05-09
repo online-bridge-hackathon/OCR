@@ -25,7 +25,9 @@ The role of the API is to make use of the trained model to provide a software so
 
 For additional information:
 Computer Vision - Teodor Totev ( tedi.totev97@gmail.com )
+
 API - John Faben ( jdfaben@gmail.com)
+
 Or message on the OCR channel on the online-bridge-hackathon discord 
 
 =======
@@ -50,6 +52,7 @@ Put yolov4-cards.cfg and cards.weights in the main darknet folder. \
 Put cards.data and cards.names in darknet/data/.
 9. In the notebook make sure you are in the main darknet folder and run:
 > ! chmod +x ./darknet
+
 > ! python detect.py -if data/test/ -of data/test_out/ -cfg yolov4-cards.cfg -df data/cards.data -w cards.weights \
 If you have followed the instructions above closely this should run detection on the provided images. Otherwise make sure you change the provided paths to the appropriate files.
 
