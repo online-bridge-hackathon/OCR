@@ -1,25 +1,19 @@
 # OCR
-An Object Character Recognition (OCR) API that receives one or more images of bridge hands on a table and serves a LIN/PBN./etc describing them.
+The Object Character Recognition (OCR) project aims to detect playing cards from images/videos of the bridge table. It generates a synthetic dataset which is then used to train a computer vision model. The CV model is then integrated into an OCR API which detects cards from images and applies appropriate bridge table logic to reconstruct the bridge deals and serve them in widely used bridge formats.
 
 ## Computer Vision Model
-A good computer vision (CV) model is crucial for enabling the OCR functionality. Ideally, it should be able to identify existing card instances from 2D images and/or videos. There are many frameworks that could be used. 
-Currently we are exploring the Yolo v4 Darknet framework. The training of the model requires GPU access. \
-Yolo v4 Darknet: https://github.com/AlexeyAB/darknet. In order to use the model follow the described procedures in the provided repository. \
-Yolo v4 Configuration file: https://drive.google.com/file/d/1yXCTUUaUzIpc6DjX4ObbFrrkQyrDcmre/view?usp=sharing \
-Yolo v4 Weights Pre-trained on COCO: https://drive.google.com/file/d/1IsDp30yaeAk5T9JUrfPnp_844Q7Syj4B/view?usp=sharing \
-Yolo v4 Weights Transfer Learned on the Synthethic dataset: https://drive.google.com/file/d/1-0V4grCW4FZAhWxcAB6HPveG7USf1rA5/view?usp=sharing \
-cards.data file: https://drive.google.com/file/d/1YBORw-uk8WDV0qJBMGupigEbER-Y38XE/view?usp=sharing \
-cards.names file: https://drive.google.com/file/d/1vQo2CDmZgAa6Jjie2zmsgeN88oMRiUHN/view?usp=sharing \
-train.txt file: https://drive.google.com/file/d/1RNBeSUjODZ6g_-kQW7AQ_tEKo6SFvQb7/view?usp=sharing \
-val.txt file: https://drive.google.com/file/d/1SMhjx2uM_nVtJ5ZIgOBt1uW4LSChOzc4/view?usp=sharing \
+The current computer vision model in use is Yolo v4 as provided by AlexeyAB: \
+Yolo v4 Darknet: https://github.com/AlexeyAB/darknet
 
-### Datasets
-The computer vision model requires ground truth labelled 2D images in order to learn how to identify existing card instances. 
+### Training Dataset
+In order to train the Yolo v4 model a synthetic dataset was generated. The Jupyter Notebook and a Python label format conversion script can be found in: \
+> datagen/
 
-#### Labelling
-A labelled 2D image should include bounding box coordinates for each of the existing card symbol instances and their corresponding category classification.
-This is a laborious and manual work that can be accomplished with a special labelling tool. For use and installation instructions follow the ones provided in the following repository.
-LabelImg tool: https://github.com/tzutalin/labelImg
+## Detection
+The trained model can be used to detect images through a Python API located in: \
+> detection/
+It's current output is overlapping 720x720 snippets of the input images with snippet detections. These will soon be combined to form detections over the original input images.
+
 
 ### Synthetic Data Generation
 Using the provided python notebook with the same name a synthetic dataset can be generated. \
@@ -32,4 +26,31 @@ The role of the API is to make use of the trained model to provide a software so
 For additional information:
 Computer Vision - Teodor Totev ( tedi.totev97@gmail.com ), 
 API - Zhivko Draganov ( ) or message in the OCR channel in Discord
+=======
+Suggested testing path:
+1. Open Google Colab: https://colab.research.google.com
+2. Create a new notebook
+3. Mount your Google Drive using the commands:
+> from google.colab import drive
+> drive.mount('/content/drive')
+4. Clone Yolo v4 Darknet repository: https://github.com/AlexeyAB/darknet
+5. Navigate to the cloned darknet folder and edit the Makefile as follows:
+> GPU=1
+> CUDNN=1
+> CUDNN_HALF=1
+> OPENCV=1
+> LIBSO=1
+6. Run make in the darknet folder
+> make
+7. Upload detect.py to the main darknet folder. Upload any test images i.e. in darknet/data/test/ and outputs will be generated in darknet/data/test_out/. Some test images can be found here: https://drive.google.com/drive/folders/1KA7HseM2liyBhExUySehFMhzlANCs0wO?usp=sharing
+8. Download the following darknet data files: https://drive.google.com/drive/folders/1rsNcTu3LQekErwQonqjSFaDLGiPg829A?usp=sharing \
+Put yolov4-cards.cfg and cards.weights in the main darknet folder. \
+Put cards.data and cards.names in darknet/data/.
+9. In the notebook make sure you are in the main darknet folder and run:
+> ! chmod +x ./darknet
+> ! python detect.py -if data/test/ -of data/test_out/ -cfg yolov4-cards.cfg -df data/cards.data -w cards.weights \
+If you have followed the instructions above closely this should run detection on the provided images. Otherwise make sure you change the provided paths to the appropriate files.
 
+Contacts:
+Teodor Totev ( tedi.totev97@gmail.com )
+John Fabedn (jdfaben@gmail.com)
