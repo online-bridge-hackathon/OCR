@@ -24,8 +24,10 @@ Synthethic Dataset: https://drive.google.com/drive/folders/1Vapg88kaifZkCv9o9GeG
 The role of the API is to make use of the trained model to provide a software solution capable of serving hand-describing files from 2D images. 
 
 For additional information:
-Computer Vision - Teodor Totev ( tedi.totev97@gmail.com ), 
-API - Zhivko Draganov ( ) or message in the OCR channel in Discord
+Computer Vision - Teodor Totev ( tedi.totev97@gmail.com )
+API - John Faben ( jdfaben@gmail.com)
+Or message on the OCR channel on the online-bridge-hackathon discord 
+
 =======
 Suggested testing path:
 1. Open Google Colab: https://colab.research.google.com
